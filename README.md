@@ -58,7 +58,9 @@ btc-trend-pipeline/
 ├── app/
 │   ├── api.py              # FastAPI app, serves predictions
 │   ├── run_pipeline.py     # Fetches data, predicts, stores results
+│   ├── scheduler.py        # Runs run_pipeline() automatically every 4h
 │   ├── setup_db.py         # Creates database tables
+│   ├── entrypoint.sh       # Starts scheduler + API server together
 │   ├── rf_model.pkl        # Trained Random Forest model
 │   └── features.json       # Feature list used by the model
 ├── notebooks/
@@ -96,10 +98,12 @@ btc-trend-pipeline/
    docker compose exec app python setup_db.py
    ```
 
-5. Run the pipeline once to generate a prediction:
+5. Restart the app container so the scheduler can pick up the newly created tables:
    ```bash
-   docker compose exec app python run_pipeline.py
+   docker compose restart app
    ```
+
+   The scheduler triggers an initial prediction automatically on startup — no manual run needed.
 
 6. Query the API:
    ```bash
@@ -118,7 +122,17 @@ btc-trend-pipeline/
 
 ## Scheduling
 
-In production, `run_pipeline.py` is meant to run automatically every 4 hours (matching the candle interval) via cron, keeping predictions fresh without manual intervention.
+The pipeline runs automatically every 4 hours (matching the candle interval) using an in-process scheduler (`scheduler.py`, built on the `schedule` library), not a system-level cron job. This keeps the project fully portable — the same container runs identically on any host with Docker, regardless of OS, with no external scheduler dependency.
+
+Inside the container, `entrypoint.sh` starts both processes together:
+- `scheduler.py` runs in the background, triggering `run_pipeline()` immediately on startup and then every 4 hours
+- `uvicorn` runs in the foreground, serving the FastAPI app
+
+```bash
+#!/bin/bash
+python scheduler.py &
+uvicorn api:app --host 0.0.0.0 --port 8000
+```
 
 ## Key Design Decisions
 
