@@ -24,6 +24,7 @@ services:
       DB_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "8000:8000"
+      - "8501:8501"
 
 volumes:
   postgres_data:
