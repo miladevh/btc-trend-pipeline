@@ -17,4 +17,4 @@ COPY app/ .
 EXPOSE 8000
 
 # دستوری که وقتی کانتینر روشن می‌شود، اجرا خواهد شد
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["./entrypoint.sh"]
