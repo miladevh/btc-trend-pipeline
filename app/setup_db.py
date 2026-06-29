@@ -6,7 +6,8 @@ DB_CONFIG = {
     "port": int(os.environ.get("DB_PORT", 5432)),
     "database": os.environ.get("DB_NAME", "btc_pipeline"),
     "user": os.environ.get("DB_USER", "btc_user"),
-    "password": os.environ.get("DB_PASSWORD", "changeme")
+    "password": os.environ.get("DB_PASSWORD", "changeme"),
+    "sslmode": os.environ.get("DB_SSLMODE", "prefer")
 }
 
 conn = psycopg2.connect(**DB_CONFIG)
