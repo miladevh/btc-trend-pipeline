@@ -32,8 +32,9 @@ Binance API → run_pipeline.py → PostgreSQL → FastAPI → /predict
 | Modeling | Scikit-learn (Random Forest), XGBoost |
 | Database | PostgreSQL |
 | API | FastAPI, Uvicorn |
+| Dashboard | Streamlit, Plotly |
 | Containerization | Docker, Docker Compose |
-| Scheduling | Cron |
+| Scheduling | In-process scheduler (`schedule` library) |
 | Data source | Binance public API |
 
 ## Model Results
@@ -57,10 +58,11 @@ For context, a coin-flip baseline is 50%. In financial trend prediction, this is
 btc-trend-pipeline/
 ├── app/
 │   ├── api.py              # FastAPI app, serves predictions
+│   ├── dashboard.py        # Streamlit dashboard with live chart and manual trigger
 │   ├── run_pipeline.py     # Fetches data, predicts, stores results
 │   ├── scheduler.py        # Runs run_pipeline() automatically every 4h
 │   ├── setup_db.py         # Creates database tables
-│   ├── entrypoint.sh       # Starts scheduler + API server together
+│   ├── entrypoint.sh       # Starts scheduler + API + dashboard together
 │   ├── rf_model.pkl        # Trained Random Forest model
 │   └── features.json       # Feature list used by the model
 ├── notebooks/
@@ -120,6 +122,14 @@ btc-trend-pipeline/
    }
    ```
 
+## Dashboard
+
+A Streamlit dashboard is available at `http://localhost:8501`, showing:
+- The latest prediction, with trend, timestamp (converted to local time), and model version
+- A manual "run pipeline now" button — fetches live data and generates a fresh prediction on demand, instead of waiting for the next scheduled run
+- A price chart of the last 200 candles
+- A history table of the most recent predictions
+
 ## Scheduling
 
 The pipeline runs automatically every 4 hours (matching the candle interval) using an in-process scheduler (`scheduler.py`, built on the `schedule` library), not a system-level cron job. This keeps the project fully portable — the same container runs identically on any host with Docker, regardless of OS, with no external scheduler dependency.
@@ -144,10 +154,9 @@ uvicorn api:app --host 0.0.0.0 --port 8000
 
 ## Possible Next Steps
 
-- Replace cron with a managed scheduler (e.g., Airflow) for more complex retraining workflows
+- Replace the in-process scheduler with a managed orchestrator (e.g., Airflow) for more complex retraining workflows
 - Add model monitoring to track prediction drift over time (`actual_label` column is already in place)
-- Add a lightweight dashboard (Streamlit) for visualizing live predictions
-- Deploy to a cloud platform (Render/Railway) for public access
+- Deploy to a cloud platform for public access
 
 ## Author
 
